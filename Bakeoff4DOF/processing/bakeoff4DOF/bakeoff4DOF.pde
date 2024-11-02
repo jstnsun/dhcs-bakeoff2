@@ -141,6 +141,11 @@ void mouseReleased() {
   }
 }
 
+void mouseMoved() {
+  t.x = mouseX;
+  t.y = mouseY;
+}
+
 // Checks if the current trial was successful
 // Probably shouldn't modify this, but email me if you want to for some good reason
 public boolean checkForSuccess() {
