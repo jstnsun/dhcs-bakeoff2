@@ -1,7 +1,26 @@
 import java.util.ArrayList;
 import java.util.Collections;
 
+// Square Class to be Inherited From
+private class Square {
+  float x = displayW/2;
+  float y = displayH/2;
+  float z = 50f;
+  float rotation = 0;
+}
+
+// Trial Target
+private class Target extends Square {
+}
+
+// Trial Destinations
+private class Destination extends Square {
+}
+
 // Program Globals - Leave Alone Unless Specified Otherwise
+final int displayW = 1000; // Size of display width, in pixels
+final int displayH = 800;  // Size of display height, in pixels
+final int screenPPI = 72;  // PPI of screen being used
 float border;              // Border padding from sides of program window
 int trialCount = 10;       // Number of trials
 int trialIndex = 0;        // Current trial
@@ -11,32 +30,24 @@ int startTime = 0;         // Time of first click
 int finishTime = 0;        // Time of final click
 boolean userDone = false;  // Flag for if all trials are over
 
-final int screenPPI = 72; // PPI of screen being used
-
-//These variables are for my example design. Your input code should modify/replace these
-float logoX = 500;
-float logoY = 500;
-float logoZ = 50f;
-float logoRotation = 0;
-
-// Trial Destinations
-private class Destination {
-  float x = 0;
-  float y = 0;
-  float z = 0;
-  float rotation = 0;
-}
+Target t = new Target();
 ArrayList<Destination> destinations = new ArrayList<Destination>();
 
+void settings() {
+  size(displayW, displayH);
+}
+
 void setup() {
-  size(1000, 800);
-  rectMode(CENTER);
   textFont(createFont("Arial", inchToPix(.3f)));
   textAlign(CENTER);
   rectMode(CENTER);       // Draw rectangles from the center outwards
   border = inchToPix(2f); // Border padding of 2.0"; don't change this
+  createDestinations();
+}
 
-  // Creates a `trialCount` number of destinations; don't change this
+// Creates a `trialCount` number of destinations
+// Don't change this
+void createDestinations() {
   println("Creating "+trialCount + " targets");
   for (int i = 0; i < trialCount; i++) {
     Destination d = new Destination();
@@ -47,7 +58,7 @@ void setup() {
     destinations.add(d);
     println("Created target with " + d.x + "," + d.y + "," + d.rotation + "," + d.z);
   }
-  Collections.shuffle(destinations); // Randomizes order of destinations; don't change this
+  Collections.shuffle(destinations); // Randomizes order of destinations
 }
 
 void draw() {
@@ -58,17 +69,29 @@ void draw() {
   // Test square in the top left corner. Should be 1 x 1 inch
   // rect(inchToPix(0.5), inchToPix(0.5), inchToPix(1), inchToPix(1));
 
-  // Prints program results to stdout once all trials are over
-  // Shouldn't really modify this printout code unless there is a really good reason to
   if (userDone) {
-    text("User completed " + trialCount + " trials", width/2, inchToPix(.4f));
-    text("User had " + errorCount + " error(s)", width/2, inchToPix(.4f)*2);
-    text("User took " + (finishTime-startTime)/1000f/trialCount + " sec per destination", width/2, inchToPix(.4f)*3);
-    text("User took " + ((finishTime-startTime)/1000f/trialCount+(errorCount*errorPenalty)) + " sec per destination inc. penalty", width/2, inchToPix(.4f)*4);
-    return;
+    drawDoneScreen();
+  } else {
+    drawDestinations();
+    drawTarget();
+    
+    // TODO: add control drawing function calls here
+    fill(255);
+    text("Trial " + (trialIndex+1) + " of " + trialCount, width/2, inchToPix(.8f));
   }
+}
 
-  // Draw trial destination squares
+// Draws the screen of program results
+// Shouldn't really modify this code unless there is a really good reason to
+void drawDoneScreen() {
+  text("User completed " + trialCount + " trials", width/2, inchToPix(.4f));
+  text("User had " + errorCount + " error(s)", width/2, inchToPix(.4f)*2);
+  text("User took " + (finishTime-startTime)/1000f/trialCount + " sec per destination", width/2, inchToPix(.4f)*3);
+  text("User took " + ((finishTime-startTime)/1000f/trialCount+(errorCount*errorPenalty)) + " sec per destination inc. penalty", width/2, inchToPix(.4f)*4);
+}
+
+// Draws the trial destination squares
+void drawDestinations() {
   for (int i = trialIndex; i < trialCount; i++) {
     pushMatrix();
     Destination d = destinations.get(i);
@@ -76,67 +99,24 @@ void draw() {
     rotate(radians(d.rotation)); // Rotate around origin of destination
     noFill();
     strokeWeight(3f);
-    if (trialIndex==i)
+    if (trialIndex == i)
       stroke(255, 0, 0, 192);
     else
       stroke(128, 128, 128, 128);
     rect(0, 0, d.z, d.z);
     popMatrix();
   }
-
-  // Draw trial target square
-  pushMatrix();
-  translate(logoX, logoY);       // Center drawing coordinates of trial
-  rotate(radians(logoRotation)); // Rotate around origin of trial
-  noStroke();
-  fill(60, 60, 192, 192);
-  rect(0, 0, logoZ, logoZ);
-  popMatrix();
-
-  // Example Controls
-  fill(255);
-  scaffoldControlLogic(); // You are going to want to replace this!
-  text("Trial " + (trialIndex+1) + " of " +trialCount, width/2, inchToPix(.8f));
 }
 
-// My example design for control, which is terrible
-void scaffoldControlLogic() {
-  // Upper left corner, rotate counterclockwise
-  text("CCW", inchToPix(.4f), inchToPix(.4f));
-  if (mousePressed && dist(0, 0, mouseX, mouseY) < inchToPix(.8f))
-    logoRotation--;
-
-  // Upper right corner, rotate clockwise
-  text("CW", width-inchToPix(.4f), inchToPix(.4f));
-  if (mousePressed && dist(width, 0, mouseX, mouseY) < inchToPix(.8f))
-    logoRotation++;
-
-  // Lower left corner, decrease Z
-  text("-", inchToPix(.4f), height-inchToPix(.4f));
-  if (mousePressed && dist(0, height, mouseX, mouseY) < inchToPix(.8f))
-    logoZ = constrain(logoZ-inchToPix(.02f), .01, inchToPix(4f)); // Leave min and max alone!
-
-  // Lower right corner, increase Z
-  text("+", width-inchToPix(.4f), height-inchToPix(.4f));
-  if (mousePressed && dist(width, height, mouseX, mouseY) < inchToPix(.8f))
-    logoZ = constrain(logoZ+inchToPix(.02f), .01, inchToPix(4f)); // Leave min and max alone!
-
-  // Left middle, move left
-  text("left", inchToPix(.4f), height/2);
-  if (mousePressed && dist(0, height/2, mouseX, mouseY) < inchToPix(.8f))
-    logoX-=inchToPix(.02f);
-
-  text("right", width-inchToPix(.4f), height/2);
-  if (mousePressed && dist(width, height/2, mouseX, mouseY) < inchToPix(.8f))
-    logoX+=inchToPix(.02f);
-
-  text("up", width/2, inchToPix(.4f));
-  if (mousePressed && dist(width/2, 0, mouseX, mouseY) < inchToPix(.8f))
-    logoY-=inchToPix(.02f);
-
-  text("down", width/2, height-inchToPix(.4f));
-  if (mousePressed && dist(width/2, height, mouseX, mouseY) < inchToPix(.8f))
-    logoY+=inchToPix(.02f);
+// Draws the trial target square
+void drawTarget() {
+  pushMatrix();
+  translate(t.x, t.y);         // Center drawing coordinates of trial
+  rotate(radians(t.rotation)); // Rotate around origin of trial
+  noStroke();
+  fill(60, 60, 192, 192);
+  rect(0, 0, t.z, t.z);
+  popMatrix();
 }
 
 void mousePressed() {
@@ -165,13 +145,13 @@ void mouseReleased() {
 // Probably shouldn't modify this, but email me if you want to for some good reason
 public boolean checkForSuccess() {
   Destination d = destinations.get(trialIndex);
-  boolean withinD = dist(d.x, d.y, logoX, logoY) < inchToPix(.05f);
-  boolean withinR = calculateDifferenceBetweenAngles(d.rotation, logoRotation) <= 5;
-  boolean withinZ = abs(d.z - logoZ) < inchToPix(.1f);
+  boolean withinD = dist(d.x, d.y, t.x, t.y) < inchToPix(.05f);
+  boolean withinR = calculateDifferenceBetweenAngles(d.rotation, t.rotation) <= 5;
+  boolean withinZ = abs(d.z - t.z) < inchToPix(.1f);
 
-  println("Close Enough Distance: " + withinD + " (logo X/Y = " + d.x + "/" + d.y + ", destination X/Y = " + logoX + "/" + logoY +")");
-  println("Close Enough Rotation: " + withinR + " (rot dist="+calculateDifferenceBetweenAngles(d.rotation, logoRotation)+")");
-  println("Close Enough Z: " +  withinZ + " (logo Z = " + d.z + ", destination Z = " + logoZ +")");
+  println("Close Enough Distance: " + withinD + " (logo X/Y = " + d.x + "/" + d.y + ", destination X/Y = " + t.x + "/" + t.y +")");
+  println("Close Enough Rotation: " + withinR + " (rot dist="+calculateDifferenceBetweenAngles(d.rotation, t.rotation)+")");
+  println("Close Enough Z: " +  withinZ + " (logo Z = " + d.z + ", destination Z = " + t.z +")");
   println("Close Enough All: " + (withinD && withinR && withinZ));
 
   return withinD && withinR && withinZ;
