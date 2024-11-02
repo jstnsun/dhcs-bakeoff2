@@ -77,6 +77,7 @@ void draw() {
     
     // TODO: add control drawing function calls here
     fill(255);
+    scaffoldControlLogic();
     text("Trial " + (trialIndex+1) + " of " + trialCount, width/2, inchToPix(.8f));
   }
 }
@@ -117,6 +118,45 @@ void drawTarget() {
   fill(60, 60, 192, 192);
   rect(0, 0, t.z, t.z);
   popMatrix();
+}
+
+void scaffoldControlLogic() {
+  // Upper left corner, rotate counterclockwise
+  text("CCW", inchToPix(.4f), inchToPix(.4f));
+  if (mousePressed && dist(0, 0, mouseX, mouseY) < inchToPix(.8f))
+    t.rotation--;
+
+  // Upper right corner, rotate clockwise
+  text("CW", width-inchToPix(.4f), inchToPix(.4f));
+  if (mousePressed && dist(width, 0, mouseX, mouseY) < inchToPix(.8f))
+    t.rotation++;
+
+  // Lower left corner, decrease Z
+  text("-", inchToPix(.4f), height-inchToPix(.4f));
+  if (mousePressed && dist(0, height, mouseX, mouseY) < inchToPix(.8f))
+    t.z = constrain(t.z-inchToPix(.02f), .01, inchToPix(4f)); // Leave min and max alone!
+
+  // Lower right corner, increase Z
+  text("+", width-inchToPix(.4f), height-inchToPix(.4f));
+  if (mousePressed && dist(width, height, mouseX, mouseY) < inchToPix(.8f))
+    t.z = constrain(t.z+inchToPix(.02f), .01, inchToPix(4f)); // Leave min and max alone!
+
+  // Left middle, move left
+  text("left", inchToPix(.4f), height/2);
+  if (mousePressed && dist(0, height/2, mouseX, mouseY) < inchToPix(.8f))
+    t.x-=inchToPix(.02f);
+
+  text("right", width-inchToPix(.4f), height/2);
+  if (mousePressed && dist(width, height/2, mouseX, mouseY) < inchToPix(.8f))
+    t.x+=inchToPix(.02f);
+
+  text("up", width/2, inchToPix(.4f));
+  if (mousePressed && dist(width/2, 0, mouseX, mouseY) < inchToPix(.8f))
+    t.y-=inchToPix(.02f);
+
+  text("down", width/2, height-inchToPix(.4f));
+  if (mousePressed && dist(width/2, height, mouseX, mouseY) < inchToPix(.8f))
+    t.y+=inchToPix(.02f);
 }
 
 void mousePressed() {
