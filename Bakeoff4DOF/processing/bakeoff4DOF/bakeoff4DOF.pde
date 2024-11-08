@@ -16,7 +16,8 @@ private class Target extends Square {
 // Trial Destinations
 private class Destination extends Square {
 }
-
+boolean move_phase = true;
+int double_click = 0;
 // Program Globals - Leave Alone Unless Specified Otherwise
 final int displayW = 1000; // Size of display width, in pixels
 final int displayH = 800;  // Size of display height, in pixels
@@ -125,11 +126,8 @@ void mousePressed() {
     startTime = millis();
     println("Time started!");
   }
-}
-
-void mouseReleased() {
-  // Check if user clicked middle of screen within 3", which this code uses as a submit button
-  if (dist(width/2, height/2, mouseX, mouseY) < inchToPix(3f)) {
+  if (millis() - double_click <= 1000){ //check if it's double click
+    if (dist(width/2, height/2, mouseX, mouseY) < inchToPix(3f)) {
     if (userDone == false && !checkForSuccess())
       errorCount++;
 
@@ -139,6 +137,21 @@ void mouseReleased() {
       finishTime = millis();
     }
   }
+  }else{
+    move_phase = !move_phase; //if it's not double switch the phase from moving to not moving and vice cersa
+}
+ 
+}
+void mouseMoved(){
+  if (move_phase){
+    t.x = mouseX;
+    t.y = mouseY;
+  }
+}
+void mouseReleased() {
+  double_click = millis();
+  // Check if user clicked middle of screen within 3", which this code uses as a submit button
+
 }
 
 // Checks if the current trial was successful
