@@ -11,6 +11,18 @@ private class Square {
 
 // Trial Target
 private class Target extends Square {
+  boolean isMoving = true;
+  
+  public Target(float z) {
+    this.z = z;
+  }
+  
+  public void reset(boolean resize) {
+    if (resize)
+      this.z = inchToPix(0.2f);
+    this.isMoving = true;
+    noCursor();
+  }
 }
 
 // Trial Destinations
@@ -30,7 +42,7 @@ int startTime = 0;         // Time of first click
 int finishTime = 0;        // Time of final click
 boolean userDone = false;  // Flag for if all trials are over
 
-Target t = new Target();
+Target t = new Target(inchToPix(0.2f));
 ArrayList<Destination> destinations = new ArrayList<Destination>();
 
 void settings() {
@@ -38,6 +50,7 @@ void settings() {
 }
 
 void setup() {
+  noCursor();
   textFont(createFont("Arial", inchToPix(.3f)));
   textAlign(CENTER);
   rectMode(CENTER);       // Draw rectangles from the center outwards
@@ -70,14 +83,12 @@ void draw() {
   // rect(inchToPix(0.5), inchToPix(0.5), inchToPix(1), inchToPix(1));
 
   if (userDone) {
+    cursor(ARROW);
     drawDoneScreen();
   } else {
+    drawHUD();
     drawDestinations();
     drawTarget();
-    
-    // TODO: add control drawing function calls here
-    fill(255);
-    text("Trial " + (trialIndex+1) + " of " + trialCount, width/2, inchToPix(.8f));
   }
 }
 
@@ -90,6 +101,12 @@ void drawDoneScreen() {
   text("User took " + ((finishTime-startTime)/1000f/trialCount+(errorCount*errorPenalty)) + " sec per destination inc. penalty", width/2, inchToPix(.4f)*4);
 }
 
+// Draws text and miscellaneous information on the screen
+void drawHUD() {
+  fill(255);
+  text("Trial " + (trialIndex+1) + " of " + trialCount, width/2, inchToPix(.8f));
+}
+
 // Draws the trial destination squares
 void drawDestinations() {
   for (int i = trialIndex; i < trialCount; i++) {
@@ -99,13 +116,22 @@ void drawDestinations() {
     rotate(radians(d.rotation)); // Rotate around origin of destination
     noFill();
     strokeWeight(3f);
-    if (trialIndex == i)
+    if (trialIndex == i) {
+      drawDestinationCenterDot(d.z);
       stroke(255, 0, 0, 192);
+    }
     else
       stroke(128, 128, 128, 128);
     rect(0, 0, d.z, d.z);
     popMatrix();
   }
+}
+
+// Draws the center dot of a trial destination square
+void drawDestinationCenterDot(float len) {
+  fill(224, 12, 182, 255);
+  circle(0, 0, min(len/4, 16));  
+  noFill();
 }
 
 // Draws the trial target square
@@ -114,9 +140,21 @@ void drawTarget() {
   translate(t.x, t.y);         // Center drawing coordinates of trial
   rotate(radians(t.rotation)); // Rotate around origin of trial
   noStroke();
-  fill(60, 60, 192, 192);
+  if (isCloseEnough()) {
+    fill(60, 192, 60, 216);
+  } else {
+    fill(60, 60, 192, 156);
+  }
   rect(0, 0, t.z, t.z);
+  drawTargetCenterDot();
   popMatrix();
+}
+
+// Draws the center dot of a trial destination square
+void drawTargetCenterDot() {
+  fill(250, 248, 18, 255);
+  circle(0, 0, 3);  
+  noFill();
 }
 
 void mousePressed() {
@@ -124,26 +162,44 @@ void mousePressed() {
   if (startTime == 0) {
     startTime = millis();
     println("Time started!");
+    return;
   }
-}
-
-void mouseReleased() {
-  // Check if user clicked middle of screen within 3", which this code uses as a submit button
-  if (dist(width/2, height/2, mouseX, mouseY) < inchToPix(3f)) {
-    if (userDone == false && !checkForSuccess())
-      errorCount++;
-
-    trialIndex++;
-    if (trialIndex == trialCount && userDone == false) {
-      userDone = true;
-      finishTime = millis();
-    }
+  
+  if (t.isMoving) {
+    t.isMoving = false;
+    cursor(ARROW);
+  } else if (isCloseEnough()){
+    finishTrial();
+  } else {
+    t.reset(false);
   }
 }
 
 void mouseMoved() {
-  t.x = mouseX;
-  t.y = mouseY;
+  if (t.isMoving) { 
+    t.x = mouseX;
+    t.y = mouseY;
+  } else {
+    float d = max(dist(t.x, t.y, mouseX, mouseY), inchToPix(0.20f));
+    t.z = sqrt(2*pow(d, 2));
+    float angle = atan2(mouseY-t.y, mouseX-t.x);
+    if (angle < 0) {
+      angle += TWO_PI;
+    }
+    t.rotation = degrees(angle) + 45;
+  }
+}
+
+public void finishTrial() {
+  if (userDone == false && !checkForSuccess())
+    errorCount++;
+
+  trialIndex++;
+  if (trialIndex == trialCount && userDone == false) {
+    userDone = true;
+    finishTime = millis();
+  }
+  t.reset(true);
 }
 
 // Checks if the current trial was successful
@@ -159,6 +215,16 @@ public boolean checkForSuccess() {
   println("Close Enough Z: " +  withinZ + " (logo Z = " + d.z + ", destination Z = " + t.z +")");
   println("Close Enough All: " + (withinD && withinR && withinZ));
 
+  return withinD && withinR && withinZ;
+}
+
+// Checks if the target matches close enough to the current destination
+public boolean isCloseEnough() {
+  Destination d = destinations.get(trialIndex);
+  boolean withinD = dist(d.x, d.y, t.x, t.y) < inchToPix(.05f);
+  boolean withinR = calculateDifferenceBetweenAngles(d.rotation, t.rotation) <= 5;
+  boolean withinZ = abs(d.z - t.z) < inchToPix(.1f);
+  
   return withinD && withinR && withinZ;
 }
 
